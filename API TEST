@@ -1,0 +1,602 @@
+Jackson Json Mapping In Selenium Testing Java
+
+Many web applications provide API for external clients to use in their internal applications. When testing APIs with json response, QA engineers need to verify Json response. The verification includes two parts. (1) What UI displayed should be equal to the API response for the same request input. (2) Verify each message in the Json response. 
+
+When verifying UI against response, you can just simply compare strings, however, for reading each message in the Json response, you need to use Jackson Json Mapper, so that Json parsing will be very easy. 
+
+In this article, we use the Open Weather API as an example to test the web response for this url "api.openweathermap.org/data/2.5/weather?q=London,uk" should be the same as the API response. For verifying UI with API response, please visit related articles on this website. This article mainly focus on how to use Jackson Json Mapper to parse information. 
+
+Step 1: observing Json response. 
+
+Navigate to the site "api.openweathermap.org/data/2.5/weather?q=London,uk" and you will see the following Json response. 
+
+{"coord":{"lon":-0.13,"lat":51.51},"sys":{"type":1,"id":5091,"message":0.1971,"country":"GB","sunrise":1414824893,"sunset":1414859596},"weather":[{"id":804,"main":"Clouds","description":"overcast clouds","icon":"04n"}],"base":"cmc stations","main":{"temp":285.69,"pressure":1012,"humidity":76,"temp_min":284.15,"temp_max":287.15},"wind":{"speed":4.6,"deg":200},"clouds":{"all":88},"dt":1414881000,"id":2643743,"name":"London","cod":200}
+Step 2: observe Json response structure in Json viewer to see its object hierarchy (you can use notepad++ Json viewer) 
+
+
+
+After running the following code implementation as JUnit test, you will see the following results. 
+
+Country Name is: GB
+Sun rise 2014-11-01 02:54:53 GMT-04:00 Sun Set 2014-11-01 12:33:16 GMT-04:00
+Current Date Time is   2014-11-01 18:30:00 GMT-04:00
+Main weather is Clouds
+City Name is: London
+City Id is: 2643743
+City coordinate-0.13Longtitude 51.51 Latitude
+Project Implementation
+
+Step 3: create a Java Maven project and add dependencies "com.fasterxml.jackson.core","junit",  and "org.seleniumhq.selenium" in the pom.xml file. The file structure looks like this below. 
+
+
+
+ 
+
+Step 4: write the following code for each java class. 
+
+ConvertUnixTime.java
+
+package com.seleniummaster.jsontest;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+public class ConvertUnixTime {
+	
+	public static String UnixTimeToDateTime(long unixtime)
+	{
+		Date date = new Date(unixtime*1000L); // *1000 is to convert seconds to milliseconds
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z"); // the format of your date
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT-4"));
+		String formattedDate = sdf.format(date);
+		return formattedDate;
+	}
+
+}
+
+WeatherApiJsonClouds.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonClouds {
+@JsonProperty("all")
+private int all;
+
+public WeatherApiJsonClouds()
+{
+	
+}
+
+public int getAll() {
+	return all;
+}
+
+public void setAll(int all) {
+	this.all = all;
+}
+
+}
+
+WeatherApiJsonCoord.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonCoord {
+	@JsonProperty("lon")
+	private double lon;
+	@JsonProperty("lat")
+	private double lat;
+public WeatherApiJsonCoord()
+{
+	
+}
+public double getLon() {
+	return lon;
+}
+public void setLon(double lon) {
+	this.lon = lon;
+}
+public double getLat() {
+	return lat;
+}
+public void setLat(double lat) {
+	this.lat = lat;
+}
+}
+
+WeatherApiJsonMain.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonMain {
+@JsonProperty("temp")
+private double temp;
+@JsonProperty("pressure")
+private double pressure;
+@JsonProperty("humidity")
+private double humidity;
+@JsonProperty("temp_min")
+private double temp_min;
+@JsonProperty("temp_max")
+private double temp_max;
+public WeatherApiJsonMain()
+{
+	
+}
+
+public double getTemp() {
+	return temp;
+}
+public void setTemp(double temp) {
+	this.temp = temp;
+}
+public double getPressure() {
+	return pressure;
+}
+public void setPressure(double pressure) {
+	this.pressure = pressure;
+}
+public double getHumidity() {
+	return humidity;
+}
+public void setHumidity(double humidity) {
+	this.humidity = humidity;
+}
+public double getTemp_min() {
+	return temp_min;
+}
+public void setTemp_min(double temp_min) {
+	this.temp_min = temp_min;
+}
+public double getTemp_max() {
+	return temp_max;
+}
+public void setTemp_max(double temp_max) {
+	this.temp_max = temp_max;
+}
+
+}
+
+WeatherApiJsonResponse.java
+
+package com.seleniummaster.jsontest;
+import java.util.ArrayList;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonResponse {
+
+@JsonProperty("name")
+private String name;
+@JsonProperty("id")
+private String cityId;
+@JsonProperty("dt")
+private long dt;
+@JsonProperty("cod")
+private int cod;
+@JsonProperty("base")
+private String base;
+@JsonProperty("coord")
+private WeatherApiJsonCoord coord;
+@JsonProperty("sys")
+private WeatherApiJsonSys sys;
+@JsonProperty("weather")
+private ArrayList weather;
+
+
+public ArrayList getWeather() {
+	return weather;
+}
+
+public void setWeather(ArrayList weather) {
+	this.weather = weather;
+}
+
+@JsonProperty("main")
+private WeatherApiJsonMain main;
+@JsonProperty("wind")
+private WeatherApiJsonWind wind;
+@JsonProperty("clouds")
+private WeatherApiJsonClouds clouds;
+public WeatherApiJsonCoord getCoord() {
+	return coord;
+}
+
+public void setCoord(WeatherApiJsonCoord coord) {
+	this.coord = coord;
+}
+
+public WeatherApiJsonSys getSys() {
+	return sys;
+}
+
+public void setSys(WeatherApiJsonSys sys) {
+	this.sys = sys;
+}
+
+
+
+public WeatherApiJsonMain getMain() {
+	return main;
+}
+
+public void setMain(WeatherApiJsonMain main) {
+	this.main = main;
+}
+
+public WeatherApiJsonWind getWind() {
+	return wind;
+}
+
+public void setWind(WeatherApiJsonWind wind) {
+	this.wind = wind;
+}
+
+public WeatherApiJsonClouds getClouds() {
+	return clouds;
+}
+
+public void setClouds(WeatherApiJsonClouds clouds) {
+	this.clouds = clouds;
+}
+
+public String getBase() {
+	return base;
+}
+
+public void setBase(String base) {
+	this.base = base;
+}
+
+public long getDt() {
+	return dt;
+}
+
+public void setDt(long dt) {
+	this.dt = dt;
+}
+
+public int getCod() {
+	return cod;
+}
+
+public void setCod(int cod) {
+	this.cod = cod;
+}
+
+public String getCityId() {
+	return cityId;
+}
+
+public void setCityId(String cityId) {
+	this.cityId = cityId;
+}
+
+
+public WeatherApiJsonResponse()
+{
+	
+}
+
+public String getName() {
+	return name;
+}
+
+public void setName(String name) {
+	this.name = name;
+}
+
+}
+
+ WeatherApiJsonSys.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonSys {
+@JsonProperty("type")
+private int type;
+@JsonProperty("id")
+private int id;
+@JsonProperty("message")
+private double message;
+@JsonProperty("country")
+private String country;
+@JsonProperty("sunrise")
+private long sunrise;
+@JsonProperty("sunset")
+private long sunset;
+public WeatherApiJsonSys()
+{
+	
+}
+public int getType() {
+	return type;
+}
+public void setType(int type) {
+	this.type = type;
+}
+public int getId() {
+	return id;
+}
+public void setId(int id) {
+	this.id = id;
+}
+public double getMessage() {
+	return message;
+}
+public void setMessage(double message) {
+	this.message = message;
+}
+public String getCountry() {
+	return country;
+}
+public void setCountry(String country) {
+	this.country = country;
+}
+public long getSunrise() {
+	return sunrise;
+}
+public void setSunrise(long sunrise) {
+	this.sunrise = sunrise;
+}
+public long getSunset() {
+	return sunset;
+}
+public void setSunset(long sunset) {
+	this.sunset = sunset;
+}
+}
+
+WeatherApiJsonWeather.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonWeather {
+@JsonProperty("id")
+private int id;
+@JsonProperty("main")
+private String main;
+@JsonProperty("description")
+private String description;
+@JsonProperty("icon")
+private String icon;
+public  WeatherApiJsonWeather()
+{
+	
+}
+public int getId() {
+	return id;
+}
+public void setId(int id) {
+	this.id = id;
+}
+public String getMain() {
+	return main;
+}
+public void setMain(String main) {
+	this.main = main;
+}
+public String getDescription() {
+	return description;
+}
+public void setDescription(String description) {
+	this.description = description;
+}
+public String getIcon() {
+	return icon;
+}
+public void setIcon(String icon) {
+	this.icon = icon;
+}
+}
+
+WeatherApiJsonWind.java
+
+package com.seleniummaster.jsontest;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class WeatherApiJsonWind {
+@JsonProperty("speed")
+private double speed;
+@JsonProperty("deg")
+private double deg;
+public WeatherApiJsonWind()
+{
+	
+}
+public double getSpeed() {
+	return speed;
+}
+public void setSpeed(double speed) {
+	this.speed = speed;
+}
+public double getDeg() {
+	return deg;
+}
+public void setDeg(double deg) {
+	this.deg = deg;
+}
+}
+
+WeatherApiResponse.java
+
+package com.seleniummaster.jsontest;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+public class WeatherApiResponse {
+	
+	private final String USER_AGENT="Mozilla/5.0";
+	public String GetResponse() throws ClientProtocolException, IOException
+	{
+		StringBuffer result=new StringBuffer();
+		HttpClient client=new DefaultHttpClient();
+		String url="http://api.openweathermap.org/data/2.5/weather?q=London";
+		HttpGet request=new HttpGet(url);
+		request.addHeader("User-Agent",USER_AGENT);
+		HttpResponse response=client.execute(request);
+		int responseCode=response.getStatusLine().getStatusCode();
+		System.out.println("Response Code: " + responseCode);
+		try{
+		if(responseCode==200)
+			
+		{
+			System.out.println("Get Response is Successfull");
+			BufferedReader reader=new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			String line="";
+			while((line=reader.readLine())!=null)
+			{
+				result.append(line);
+				System.out.println(result.toString());
+			}
+		}
+		return result.toString();
+		
+	}
+		catch(Exception ex)
+	{
+		result.append("Get Response Failed");
+		return result.toString();
+	}
+
+}
+}
+
+WeatherApiTest.java
+
+package com.seleniummaster.jsontest;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
+import junit.framework.Assert;
+
+import org.apache.http.client.ClientProtocolException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@SuppressWarnings("deprecation")
+public class WeatherApiTest {
+	private WebDriver driver;
+	private String baseUrl;
+	@Before
+	public void setUp() throws Exception {
+		  driver = new FirefoxDriver();
+		    baseUrl = "http://openweathermap.org/current";
+		    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+		  }
+	
+
+	@After
+	public void tearDown() throws Exception {
+		 driver.close();
+		 driver.quit();
+	}
+
+	@Test
+	public void test() throws ClientProtocolException, IOException {
+		driver.get(baseUrl);
+		driver.navigate().to("http://api.openweathermap.org/data/2.5/weather?q=London,uk");		
+	 WebElement webElement=driver.findElement(By.tagName("pre"));
+	 WeatherApiResponse weatherApiResponse=new WeatherApiResponse();
+	 String ExpectedString=weatherApiResponse.GetResponse();
+	  System.out.println("ExpectedString is: " +ExpectedString);
+		 String DisplayedString=webElement.getText();
+	 System.out.println("DisplayedString is: " +DisplayedString);
+	 Assert.assertTrue(DisplayedString.equals(ExpectedString));
+	}
+	@Test
+	public void testJson() throws ClientProtocolException, IOException {
+		driver.get(baseUrl);
+		driver.navigate().to("http://api.openweathermap.org/data/2.5/weather?q=London,uk");	
+	 WebElement webElement=driver.findElement(By.tagName("pre"));
+	 //use Jackson map weather Json response
+	 String weatherJsonString=webElement.getText();
+	 ObjectMapper objectMapper=new ObjectMapper();
+	 WeatherApiJsonResponse weatherApiJsonResponse=objectMapper.readValue(weatherJsonString, WeatherApiJsonResponse.class);
+	 //get city name
+	 String cityName=weatherApiJsonResponse.getName();
+	 //get city Id
+	 String cityId=weatherApiJsonResponse.getCityId();
+	 //get longtitude
+	 double longtitude=weatherApiJsonResponse.getCoord().getLon();
+	 //get latitude
+	 double latitude=weatherApiJsonResponse.getCoord().getLat();
+	 //get country
+	 String country=weatherApiJsonResponse.getSys().getCountry();
+	 //get sun rise time
+	 long sunrise=weatherApiJsonResponse.getSys().getSunrise();
+	 //get sun set time
+	 long sunset=weatherApiJsonResponse.getSys().getSunset();
+	 //get weather response
+	 ArrayList weatherObject=weatherApiJsonResponse.getWeather();
+	 //get main weather 
+	 String mainweather=weatherObject.get(0).getMain();
+	 //get date time 
+	 long dt=weatherApiJsonResponse.getDt();
+	 //print all other information
+	 System.out.println("Country Name is: " +country);
+	 System.out.println("Sun rise " + ConvertUnixTime.UnixTimeToDateTime(sunrise) + " Sun Set " + ConvertUnixTime.UnixTimeToDateTime(sunset));
+	 System.out.println("Current Date Time is   " + ConvertUnixTime.UnixTimeToDateTime(dt));
+	 System.out.println("Main weather is " + mainweather);
+	 System.out.println("City Name is: " +cityName);
+	 System.out.println("City Id is: " +cityId);
+	 System.out.println("City coordinate" + longtitude + "Longtitude "  + latitude + " Latitude");
+	 Assert.assertTrue(cityName.equals("London"));
+	}
+}
+Run the test as JUnit test and see the result below. Two tests passed and results displayed in the console
+
+Country Name is: GB
+Sun rise 2014-11-01 02:54:53 GMT-04:00 Sun Set 2014-11-01 12:33:16 GMT-04:00
+Current Date Time is   2014-11-01 18:30:00 GMT-04:00
+Main weather is Clouds
+City Name is: London
+City Id is: 2643743
+City coordinate-0.13Longtitude 51.51 Latitude
+Response Code: 200
+Get Response is Successfull
+{"coord":{"lon":-0.13,"lat":51.51},"sys":{"type":1,"id":5091,"message":0.2009,"country":"GB","sunrise":1414824893,"sunset":1414859596},"weather":[{"id":803,"main":"Clouds","description":"broken clouds","icon":"04n"}],"base":"cmc stations","main":{"temp":285.68,"pressure":1012,"humidity":76,"temp_min":284.05,"temp_max":287.15},"wind":{"speed":4.1,"deg":180},"clouds":{"all":80},"dt":1414880700,"id":2643743,"name":"London","cod":200}
+ExpectedString is: {"coord":{"lon":-0.13,"lat":51.51},"sys":{"type":1,"id":5091,"message":0.2009,"country":"GB","sunrise":1414824893,"sunset":1414859596},"weather":[{"id":803,"main":"Clouds","description":"broken clouds","icon":"04n"}],"base":"cmc stations","main":{"temp":285.68,"pressure":1012,"humidity":76,"temp_min":284.05,"temp_max":287.15},"wind":{"speed":4.1,"deg":180},"clouds":{"all":80},"dt":1414880700,"id":2643743,"name":"London","cod":200}
+DisplayedString is: {"coord":{"lon":-0.13,"lat":51.51},"sys":{"type":1,"id":5091,"message":0.1971,"country":"GB","sunrise":1414824893,"sunset":1414859596},"weather":[{"id":804,"main":"Clouds","description":"overcast clouds","icon":"04n"}],"base":"cmc stations","main":{"temp":285.69,"pressure":1012,"humidity":76,"temp_min":284.15,"temp_max":287.15},"wind":{"speed":4.6,"deg":200},"clouds":{"all":88},"dt":1414881000,"id":2643743,"name":"London","cod":200}
