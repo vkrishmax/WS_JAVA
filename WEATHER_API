@@ -1,0 +1,110 @@
+Test API With Selenium Java
+
+Many web applications provide API for external clients to use in their internal applications. When testing APIs, QA engineers need to verify that what UI displayed should be equal to the API response for the same request input.  In this article, we use the Open Weather API as an example to test the web response for this url "api.openweathermap.org/data/2.5/weather?q=London,uk"   should be the same as the API response. The code is written in Java. 
+
+Step 1: create a Java project as shown below.  In the Build Path, add Selenium and JUnit libraries; download apache jar file from the link "org.jbundle.util.osgi.wrapped.org.apache.http.client-4.1.2.jar" and add the file as External JARS. 
+
+
+
+Step 2: write the code in WeatherApiTest.java class. 
+
+package com.seleniummaster.apitest;
+
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import junit.framework.Assert;
+import org.apache.http.client.ClientProtocolException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+@SuppressWarnings("deprecation")
+public class WeatherApiTest {
+	private WebDriver driver;
+	private String baseUrl;
+	@Before
+	public void setUp() throws Exception {
+		  driver = new FirefoxDriver();
+		    baseUrl = "http://openweathermap.org/current";
+		    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+		  }
+	
+
+	@After
+	public void tearDown() throws Exception {
+		 driver.close();
+		 driver.quit();
+	}
+
+	@Test
+	public void test() throws ClientProtocolException, IOException {
+		driver.get(baseUrl);
+		driver.navigate().to("http://api.openweathermap.org/data/2.5/weather?q=London");	
+	 WebElement webElement=driver.findElement(By.tagName("pre"));
+	 WeatherApiResponse weatherApiResponse=new WeatherApiResponse();
+	 String ExpectedString=weatherApiResponse.GetResponse();
+	 Assert.assertTrue(webElement.getText().equals(ExpectedString));
+	}
+
+}
+
+Step 3: write the code in the WeatherApiResponse.java class
+
+package com.seleniummaster.apitest;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+public class WeatherApiResponse {
+	
+	private final String USER_AGENT="Mozilla/5.0";
+	public String GetResponse() throws ClientProtocolException, IOException
+	{
+		StringBuffer result=new StringBuffer();
+		HttpClient client=new DefaultHttpClient();
+		String url="http://api.openweathermap.org/data/2.5/weather?q=London";
+		HttpGet request=new HttpGet(url);
+		request.addHeader("User-Agent",USER_AGENT);
+		HttpResponse response=client.execute(request);
+		int responseCode=response.getStatusLine().getStatusCode();
+		System.out.println("Response Code: " + responseCode);
+		try{
+		if(responseCode==200)
+			
+		{
+			System.out.println("Get Response is Successfull");
+			BufferedReader reader=new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+			String line="";
+			while((line=reader.readLine())!=null)
+			{
+				result.append(line);
+				System.out.println(result.toString());
+			}
+		}
+		return result.toString();
+		
+	}
+		catch(Exception ex)
+	{
+		result.append("Get Response Failed");
+		return result.toString();
+	}
+
+}
+}
+
+Step 4: run the file WeatherApiTest.java as JUnit Test. The test passed. Below is the console output
+
+Response Code: 200
+Get Response is Successfull
+{"coord":{"lon":-0.13,"lat":51.51},"sys":{"type":1,"id":5093,"message":0.0202,"country":"GB","sunrise":1411451341,"sunset":1411494984},"weather":[{"id":721,"main":"Haze","description":"haze","icon":"50n"}],"base":"cmc stations","main":{"temp":282.35,"pressure":1024,"humidity":87,"temp_min":280.93,"temp_max":284.15},"wind":{"speed":1.33,"deg":208.502},"clouds":{"all":8},"dt":1411431497,"id":2643743,"name":"London","cod":200}
