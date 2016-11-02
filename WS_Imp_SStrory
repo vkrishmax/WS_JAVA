@@ -1,0 +1,66 @@
+Jar : javax.json-1.0.2
+
+public static void main(String[] args)
+	    {
+	        try {
+	            ReadJason();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+
+	    public static void ReadJason() throws IOException {
+
+	        //define Input Stream for the Json file
+	        InputStream inputStream=null;
+	        //define Json Reader
+	        JsonReader jsonReader=null;
+	        //define Json Object
+	        JsonObject jsonObject=null;
+	        try {
+	            inputStream = new FileInputStream("C:/st/file.json");
+	            jsonReader=Json.createReader(inputStream);
+	            jsonObject = jsonReader.readObject();
+	           System.out.println(jsonObject.toString());
+	           System.out.println(jsonObject.get("TestName"));
+	         JsonArray testSteps=jsonObject.getJsonArray("TestSteps");
+	            int numberOfSteps=testSteps.size();
+	            for(int i=0;i<numberOfSteps;i++)
+	            {
+	                JsonObject eachStep=testSteps.getJsonObject(i);
+	                System.out.println("Id  "+eachStep.get("Id") + " Step:  "+eachStep.get("Step"));
+	            }
+
+	        } catch (FileNotFoundException e) {
+	            e.printStackTrace();
+	        }
+	 
+	    }
+
+
+
+{
+	"TestName": "Login",
+	"TestModule": "Dashboard",
+	"TestType": "Regression",
+	"TestSteps": [{
+		"Id": 1,
+		"Step": "Open browser"
+	},
+	{
+		"Id": 2,
+		"Step": "Enter user name"
+	},
+	{
+		"Id": 3,
+		"Test": "Enter user password"
+	},
+	{
+		"Id": 4,
+		"Step": "Click on Login button"
+	}],
+	"Verification": "Logout link should display",
+	"Note": ""
+}
+
+
